@@ -176,3 +176,15 @@ Anyone on the internet can access it.
 | **Your IP** | Visible to tailnet peers | Hidden behind relay |
 | **Ports** | Any | 443, 8443, 10000 only |
 | **TLS** | Automatic | Automatic |
+
+## Worked examples
+
+| If the user wants to… | Fetch |
+|---|---|
+| Let teammates preview a web app running on their laptop, privately | https://tailscale.com/docs/use-cases/application-testing/share-local-dev-server-with-team |
+| Put a local development server on the public internet for a demo or webhook | https://tailscale.com/docs/use-cases/application-testing/share-local-dev-server-with-internet |
+| Let friends join a game server they host, without a public IP | https://tailscale.com/docs/use-cases/personal-or-at-home-use/share-private-game-server |
+| Run a private Minecraft server just for their group | https://tailscale.com/docs/solutions/set-up-minecraft |
+| Code from an iPad against a real development environment (VS Code, code-server) | https://tailscale.com/docs/solutions/code-on-ipad-vscode-caddy-code-server |
+| Reach a home or lab inference server (Ollama, LM Studio) from other devices | https://tailscale.com/docs/use-cases/ai-infrastructure-access/connect-inference-servers |
+| Give a team private access to an AI training cluster | https://tailscale.com/docs/use-cases/ai-infrastructure-access/secure-ai-training-cluster |

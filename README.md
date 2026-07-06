@@ -1,31 +1,19 @@
-# Tailscale skill for Claude Code
+# Tailscale skill
 
-A Claude Code skill that gives Claude deep knowledge of Tailscale, headscale, and the wider Tailscale product family — from setting up an exit node on your home server to wiring up Aperture for LLM API governance, the Kubernetes operator, tsrecorder, and everything in between.
+A skill that gives your coding agent deep knowledge of Tailscale and the wider Tailscale product family. It helps you set up an exit node on your home server, wire up Aperture for LLM API governance, configure the Kubernetes operator, develop applications with `tsnet`, and everything in between.
+
+This skill works with Claude Code, Cursor, OpenCode, OpenAI Codex, Pi, and any other agent that follows the [Agent Skills standard](https://agentskills.io/home).
 
 > [!NOTE]
 > Early alpha. This skill is not yet officially supported. Please don't file Tailscale support tickets for issues you hit with it, and treat its output as a starting point rather than a final answer. Configuration syntax in particular evolves; the skill links out to canonical [Tailscale documentation](https://tailscale.com/docs) for the parts that change most often.
 
-## Install the skill
+## Installing
 
-To install the skill, use `git` to clone this repository and make it available to your LLM.
-
-For example, if you are using Claude Code, you can make the skill available to every session using the following command:
+Install using the [skills](https://skills.sh/) CLI with `npx`:
 
 ```bash
-git clone https://github.com/tailscale/tailscale-skill ~/.claude/skills/tailscale
+npx skills add https://github.com/tailscale/tailscale-skill
 ```
-
-Claude Code auto-discovers anything under `~/.claude/skills/<name>/` containing a `SKILL.md`. After cloning, the skill is available in every session.
-
-To install only in your project, clone the repository into the `.claude/skills/tailscale` directory within your project.
-
-```bash
-cd ~/your-project
-git clone https://github.com/tailscale/tailscale-skill .claude/skills/tailscale
-```
-
-For other LLMs, clone the repository into the location the LLM uses for skills.
-
 
 ## Using the Tailscale skill
 
@@ -49,9 +37,12 @@ The implicit path depends on your LLM's judgment and isn't 100% reliable. When i
 - **Aperture:** AI gateway for centralizing LLM API keys, quotas, per-user usage dashboards, coding-agent integration
 - **CLI:** every `tailscale` subcommand with flags and examples
 - **REST API:** authentication, device management, policy file, webhooks
+- **Building Go applications on Tailscale**: using `tsnet` to build applications that embed the Tailscale client.
 
 Each reference file is self-contained. The LLM should only load the relevant references to answer your question.
 
 ## Issues and feedback
 
-Open an issue at https://github.com/tailscale/tailscale-skill/issues. This is the place for skill-specific problems (a reference is wrong, Claude gives bad advice for X, the install instructions don't work on Y). For Tailscale product questions unrelated to the skill, use the regular Tailscale support channels.
+Open an issue at https://github.com/tailscale/tailscale-skill/issues. This is the place for skill-specific problems (a reference is wrong, your agent gives bad advice for some feature, the install instructions don't work).
+
+For Tailscale product questions unrelated to the skill, use the regular Tailscale support channels.

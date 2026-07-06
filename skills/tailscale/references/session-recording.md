@@ -5,15 +5,17 @@ Tailscale records two kinds of sessions to a **`tsrecorder`** node in your tailn
 1. **Tailscale SSH sessions** — terminal output (stdout/stderr) from Tailscale SSH connections.
 2. **Kubernetes sessions via the operator** — `kubectl exec` / `attach` / `debug` / `run`, plus (optionally) all Kubernetes API requests.
 
-Both ride on the same recorder image. Output is written in **asciinema** format (`.cast`, newline-delimited JSON — grep-able and replayable).
+Both ride on the same recorder image. Output is written in `asciinema` format (`.cast`, newline-delimited JSON — grep-able and replayable).
 
-> The Kubernetes recorder docs now live under `/docs/kubernetes-operator/recorder/` (recent reorg). **WebFetch the matching page** for current CRD fields, flag names, and IAM/IRSA specifics before applying config.
+> **Recording more than SSH/`kubectl`?** `tsrecorder` covers Tailscale SSH and `kubectl` sessions. For RDP, VNC, or database session recording, or full privileged-access-management (JIT access, approvals, credential elimination), refer to [Border0 by Tailscale](border0.md). For SSH/`kubectl` recording today, `tsrecorder` is the established path.
+
+> The Kubernetes recorder docs live under `/docs/kubernetes-operator/recorder/` **WebFetch the matching page** for current CRD fields, flag names, and IAM/IRSA specifics before applying configuration.
 
 ## Mental model
 
 - A `tsrecorder` node joins your tailnet like any other device (Docker container, or K8s `Recorder` CR managed by the operator).
 - The SSH server (or K8s operator) **streams session data over WireGuard** to the recorder.
-- Recorder writes to local disk or **S3-compatible storage** (AWS S3, MinIO, GCS, Wasabi, R2).
+- Recorder writes to local disk or **S3-compatible storage** (Amazon S3, MinIO, GCS, Wasabi, R2).
 - Recording is wired up by **policy**, not by per-host config:
   - SSH: a `recorder` field on an `ssh` access rule.
   - K8s: a `tailscale.com/cap/kubernetes` grant pointing at the recorder tag.
@@ -107,10 +109,11 @@ In the tailnet policy file, via a Kubernetes capability grant:
 
 - `recorder` — tag of your tsrecorder instance.
 - `enforceRecorder: true` — fail closed (deny sessions when recorder is unreachable).
-- `enableEvents: true` — also record Kubernetes API requests (not just `kubectl` sessions). Without this, only the interactive session types are captured.
+- `enableEvents: true` — also record Kubernetes API requests (not just `kubectl` sessions). Without this, only the interactive session types are captured. This is an **alpha** feature (Tailscale v1.90+) that additionally requires setting `TS_EXPERIMENTAL_KUBE_API_EVENTS=true` on the API server proxy and an `acls` rule allowing `tag:k8s-operator:443` — so `enableEvents` alone is not sufficient. Fetch the Kubernetes recorder docs for the current setup before promising it works.
 
 ### Viewing recordings
 
+- **Review recordings**: recordings can be reviewed in the Tailscale admin console.
 - **Web UI** at `https://<recorder-name>.<tailnet-dns>.ts.net` (needs `--ui` and tailnet HTTPS).
 - **CLI**: `asciinema play <file.cast>` to replay, `grep` directly on the file to search.
 - **Storage layout**: `<stablenodeid>/<timestamp>.cast` under the destination root.
@@ -126,6 +129,12 @@ In the tailnet policy file, via a Kubernetes capability grant:
 | Deploying tsrecorder via the operator (Recorder CRD, storage, IRSA) | https://tailscale.com/docs/kubernetes-operator/recorder/deploy-tsrecorder |
 | kubectl session + API event recording | https://tailscale.com/docs/kubernetes-operator/recorder/kubectl-session-recording |
 
+## Worked examples
+
+| If the user wants to… | Fetch |
+|---|---|
+| Record SSH sessions to satisfy a compliance or audit requirement (SOC2 and similar) | https://tailscale.com/docs/use-cases/infrastructure-access/record-ssh-sessions-compliance |
+
 ## Answering pattern
 
-The inline shapes above are usually enough to answer "how do I turn this on" questions. For specifics that drift — IAM policy JSON, full `tsrecorder` flag list, S3-compatible backend quirks (R2's `S3_SEND_CONTENT_MD5`, GCS interop keys), or the latest `Recorder` CRD fields (IRSA annotations, statefulSet overrides) — WebFetch the matching page and quote field names and flags verbatim from the fetched content.
+The inline shapes above are usually enough to answer "how do I turn this on" questions. For specifics that drift — IAM policy JSON, full `tsrecorder` flag list, S3-compatible backend quirks (R2's `S3_SEND_CONTENT_MD5`, GCS `interop` keys), or the latest `Recorder` CRD fields (IRSA annotations, `statefulSet` overrides). WebFetch the matching page and quote field names and flags verbatim from the fetched content.

@@ -2,10 +2,10 @@
 
 The `tailscale` command-line interface manages your device within your tailnet. Available on Linux, macOS, and Windows (no CLI on iOS/Android).
 
-> **This reference exists so Claude can drive the CLI directly.** Unlike the other references, the goal here isn't to describe Tailscale to a user — it's to give Claude enough to *operate* the binary on the user's machine. Keep two fallbacks in mind, in this order:
+> **This reference exists so agents can drive the CLI directly.** Unlike the other references, the goal here isn't to describe Tailscale to a user — it's to give agents enough to *operate* the binary on the user's machine. Keep two fallbacks in mind, in this order:
 >
 > 1. **`tailscale help <subcommand>`** — always current, always available if `tailscale` is installed, no network round-trip. Use this when you need a flag or option not listed here, or when an example below fails with an unknown flag (the CLI evolves).
-> 2. **https://tailscale.com/docs/reference/tailscale-cli** — the canonical CLI reference page. Fetch when `tailscale help` isn't available (e.g., explaining a command before installation, or when documenting for a user on a different platform).
+> 2. **https://tailscale.com/docs/reference/tailscale-cli** — the canonical CLI reference page. Fetch when `tailscale help` isn't available, like when explaining a command before installation or when documenting for a user on a different platform).
 >
 > Before suggesting an unfamiliar flag or subcommand from memory, verify it exists with `tailscale help <command>`.
 
@@ -18,7 +18,7 @@ The `tailscale` command-line interface manages your device within your tailnet. 
 
 ## Connection & authentication
 
-### tailscale up
+### `tailscale up`
 
 Connect and authenticate your device. On first run, opens a browser for SSO login.
 
@@ -40,7 +40,7 @@ Key flags:
 - `--advertise-tags` — Request specific tags (must be pre-authorized)
 - `--timeout` — Maximum wait time for login (default 0, wait forever)
 
-### tailscale down
+### `tailscale down`
 
 Disconnect from the tailnet without logging out. The device stays registered.
 
@@ -48,7 +48,7 @@ Disconnect from the tailnet without logging out. The device stays registered.
 tailscale down
 ```
 
-### tailscale login / logout
+### `tailscale login` and `tailscale logout`
 
 ```bash
 tailscale login               # Start login flow (alternative to `up`)
@@ -57,7 +57,7 @@ tailscale logout              # Deregister device from tailnet entirely
 
 `logout` removes the device from the tailnet. Use `down` to temporarily disconnect.
 
-### tailscale switch
+### `tailscale switch`
 
 Switch between multiple tailnet accounts (Fast User Switching):
 
@@ -70,7 +70,7 @@ Profiles are stored locally. You can set a nickname for each profile.
 
 ## Status & information
 
-### tailscale status
+### `tailscale status`
 
 Show all devices on your tailnet with their IPs, hostnames, and connection status:
 
@@ -82,7 +82,7 @@ tailscale status --peers=false  # Only show this device
 
 The `--json` output includes device IDs, public keys, last seen times, and connection details.
 
-### tailscale ip
+### `tailscale ip`
 
 ```bash
 tailscale ip                  # Show this device's Tailscale IPs (v4 and v6)
@@ -91,7 +91,7 @@ tailscale ip -6               # IPv6 only
 tailscale ip <hostname>       # Show IP of another device
 ```
 
-### tailscale whois
+### `tailscale whois`
 
 Look up who owns a Tailscale IP address:
 
@@ -99,14 +99,14 @@ Look up who owns a Tailscale IP address:
 tailscale whois 100.64.1.2    # Shows device owner, hostname, tags
 ```
 
-### tailscale version
+### `tailscale version`
 
 ```bash
 tailscale version             # Client version
 tailscale version --daemon    # Daemon version (may differ on some platforms)
 ```
 
-### tailscale netcheck
+### `tailscale netcheck`
 
 Check NAT type, UDP connectivity, and DERP relay latency:
 
@@ -116,7 +116,7 @@ tailscale netcheck
 
 Reports: NAT mapping type, port mapping (UPnP/NAT-PMP/PCP), preferred DERP region, and latency to all DERP servers. Useful for diagnosing connectivity issues behind firewalls.
 
-### tailscale ping
+### `tailscale ping`
 
 Test connectivity to a specific device:
 
@@ -129,7 +129,7 @@ tailscale ping --peerapi <host>  # HTTP request via peer API
 
 Shows whether the connection is direct (peer-to-peer) or relayed through a DERP server.
 
-## Configuration (tailscale set)
+## Configuration (`tailscale set`)
 
 `tailscale set` modifies device configuration without reconnecting:
 
@@ -153,7 +153,7 @@ Most `up` flags are also accepted by `set` (no reconnect required). `tailscale h
 
 ## Serve & Funnel
 
-### tailscale serve
+### `tailscale serve`
 
 Expose a local service to your tailnet (private — only tailnet members can access):
 
@@ -185,7 +185,7 @@ tailscale serve reset
 
 Tailscale automatically provisions a TLS certificate for your device's FQDN (`machine.tailnet-name.ts.net`).
 
-### tailscale funnel
+### `tailscale funnel`
 
 Like `serve`, but exposes the service to the **public internet** (not just your tailnet):
 
@@ -208,7 +208,7 @@ Key differences from serve:
 
 ## File transfer
 
-### Taildrop (tailscale file)
+### Taildrop (`tailscale file`)
 
 Send and receive files directly between tailnet devices:
 
@@ -221,7 +221,7 @@ tailscale file cp *.pdf my-server:
 tailscale file get /path/to/download/dir
 ```
 
-### Taildrive (tailscale drive)
+### Taildrive (`tailscale drive`)
 
 Share persistent directories between devices:
 
@@ -244,7 +244,7 @@ Use these commands together to diagnose connectivity issues:
 3. `tailscale netcheck` — What's your NAT type? Can you do UDP?
 4. `tailscale status --json` — Full details for scripting/debugging
 
-### tailscale nc
+### `tailscale nc`
 
 Netcat-like tool for testing TCP connections through Tailscale:
 
@@ -252,7 +252,7 @@ Netcat-like tool for testing TCP connections through Tailscale:
 tailscale nc <hostname> <port>
 ```
 
-### tailscale dns
+### `tailscale dns`
 
 Query Tailscale DNS:
 
@@ -263,7 +263,7 @@ tailscale dns query <name>    # Look up a name via Tailscale DNS
 
 ## Security
 
-### tailscale lock
+### `tailscale lock`
 
 Manage Tailnet Lock (requires devices to be signed by trusted keys):
 
@@ -279,7 +279,7 @@ tailscale lock log                  # View lock audit log
 tailscale lock local-disable        # Disable locally (this node only)
 ```
 
-### tailscale cert
+### `tailscale cert`
 
 Provision TLS certificates for your device's Tailscale FQDN:
 
@@ -291,7 +291,7 @@ Creates `.crt` and `.key` files. Certificates are automatically renewed. Useful 
 
 ## Administration
 
-### tailscale update
+### `tailscale update`
 
 ```bash
 tailscale update              # Check for and apply updates
@@ -300,7 +300,7 @@ tailscale update --yes        # Auto-confirm update
 tailscale update --track=stable  # Switch release track (stable/unstable)
 ```
 
-### tailscale bugreport
+### `tailscale bugreport`
 
 Generate a diagnostic report for Tailscale support:
 
@@ -308,7 +308,7 @@ Generate a diagnostic report for Tailscale support:
 tailscale bugreport           # Prints a bug report ID
 ```
 
-### tailscale configure
+### `tailscale configure`
 
 Platform-specific configuration helpers:
 
@@ -317,14 +317,14 @@ tailscale configure kubeconfig <hostname>   # Set up kubectl via Tailscale
 tailscale configure synology                # Configure Synology NAS
 ```
 
-### tailscale metrics
+### `tailscale metrics`
 
 ```bash
 tailscale metrics             # Prometheus-format metrics
 tailscale metrics print       # Human-readable metrics
 ```
 
-### tailscale syspolicy
+### `tailscale syspolicy`
 
 View managed system policies (MDM-set values):
 
@@ -342,7 +342,8 @@ tailscale completion fish     # Fish completions
 tailscale completion powershell  # PowerShell completions
 ```
 
-Install permanently:
+Install tab completion permanently:
+
 ```bash
 # Bash (Linux)
 tailscale completion bash > /etc/bash_completion.d/tailscale
@@ -354,17 +355,17 @@ tailscale completion zsh > "${fpath[1]}/_tailscale"
 tailscale completion fish > ~/.config/fish/completions/tailscale.fish
 ```
 
-## Operating the CLI from Claude
+## Operating the CLI
 
 When driving `tailscale` on the user's machine, prefer these patterns:
 
-**Verify before guessing.** If an example below fails with an unknown flag, the CLI version may differ from this reference. Run `tailscale help <subcommand>` to see the current flag set rather than retrying the same flag.
+**Verify before guessing.** If an example below fails with an unknown flag, the CLI version may differ from this reference. Run `tailscale help <subcommand>` to review the current flag set rather than retrying the same flag.
 
 **Prefer machine-readable output.** For any decision logic (selecting a device, checking online status, finding a peer's IP), use `tailscale status --json | jq ...` rather than parsing the human-readable table. The JSON shape is stable; the table format isn't guaranteed to be.
 
-**Resolve hostnames instead of hardcoding IPs.** `tailscale ip <hostname>` returns the current Tailscale IP for a peer — use it instead of pasting `100.x.y.z` from earlier output. Hostnames are stable; IPs can change on re-auth.
+**Resolve hostnames instead of hard-coding IPs.** `tailscale ip <hostname>` returns the current Tailscale IP for a peer — use it instead of pasting `100.x.y.z` from earlier output. Hostnames are stable; IPs can change on re-auth.
 
-**Confirm before destructive actions.** `tailscale logout` deregisters the device (different from `down`); `tailscale lock disable` requires the recovery secret and weakens the tailnet's security; `tailscale set --reset` reverts unspecified flags to defaults. Check the user's intent before running these.
+**Confirm before destructive actions.** `tailscale logout` unregisters the device (different from `down`); `tailscale lock disable` requires the recovery secret and weakens the tailnet's security; `tailscale set --reset` reverts unspecified flags to defaults. Check the user's intent before running these.
 
 **Diagnostics flow** (eval-tested pattern for connectivity questions):
 

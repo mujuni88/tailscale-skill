@@ -7,10 +7,10 @@ The Tailscale REST API automates device management, DNS, access control, logging
 ## Mental model
 
 - **Base URL**: `https://api.tailscale.com/api/v2`
-- **Tailnet path**: every tailnet-scoped endpoint takes a `{tailnet}` parameter; use `-` to refer to the caller's default tailnet (e.g., `/tailnet/-/devices`).
+- **Tailnet path**: every tailnet-scoped endpoint takes a `{tailnet}` parameter; use `-` to refer to the caller's default tailnet (`/tailnet/-/devices`).
 - **Auth**: three options.
   - **API access tokens** (`tskey-api-...`) — user-scoped, generated in the admin console, expire in 1–90 days.
-  - **OAuth client credentials** (`tskey-client-...`) — machine-scoped, scope-restricted (`devices:read`, `devices:write`, `dns:read`, etc.), exchanged for short-lived access tokens.
+  - **OAuth client credentials** (`tskey-client-...`) — machine-scoped, scope-restricted (`devices:read`, `devices:write`, `dns:read`, others), exchanged for short-lived access tokens.
   - **Trust credentials** — delegated fine-grained access with attribute-based limits. Use when you need API access tied to specific key/value claims rather than full admin rights.
 - **Request style**: standard JSON for most endpoints; HuJSON (JSON with comments + trailing commas) for the ACL endpoint.
 - **No pagination** today — list endpoints return everything in one response. Plan accordingly for large tailnets.
@@ -107,14 +107,14 @@ curl -X POST -u "$TOKEN:" -H "Content-Type: application/json" \
 
 - **Bulk delete stale devices**: list `/tailnet/-/devices`, filter by `lastSeen` against a threshold, `DELETE /device/{id}` for each. Throttle to avoid 429s.
 - **Get a device ID** quickly: `tailscale status --json` is faster than an API round-trip and works locally.
-- **Atomic policy updates**: always pass `If-Match` with the GET-returned ETag. Without it, a concurrent edit will silently overwrite yours.
-- **Programmatic device approval**: webhook on `nodeNeedsApproval` → check your external state → POST to `/device/{id}/authorized`. See `references/device-management.md`.
+- **Atomic policy updates**: always pass `If-Match` with the GET-returned `ETag`. Without it, a concurrent edit will silently overwrite yours.
+- **Programmatic device approval**: webhook on `nodeNeedsApproval` → check your external state → POST to `/device/{id}/authorized`. Refer to `references/device-management.md`.
 
 ## Where to find current information
 
 | User is asking about… | Fetch |
 |---|---|
-| Full REST API reference (endpoints, fields, query params) | https://tailscale.com/docs/reference/tailscale-api |
+| Full REST API reference (endpoints, fields, query parameters) | https://tailscale.com/docs/reference/tailscale-api |
 | OAuth clients — scopes, secret handling, ephemeral flag | https://tailscale.com/docs/features/oauth-clients |
 | Trust credentials (delegated/fine-grained API access) | https://tailscale.com/docs/reference/trust-credentials |
 | Webhooks — overview, events, payload shapes | https://tailscale.com/docs/features/webhooks |
@@ -122,7 +122,7 @@ curl -X POST -u "$TOKEN:" -H "Content-Type: application/json" \
 | Logging overview | https://tailscale.com/docs/features/logging |
 | Configuration audit logs | https://tailscale.com/docs/features/logging/audit-logging |
 | Network flow logs | https://tailscale.com/docs/features/logging/network-flow-logs |
-| Log streaming (SIEM, S3, etc.) | https://tailscale.com/docs/features/logging/log-streaming |
+| Log streaming (SIEM, S3) | https://tailscale.com/docs/features/logging/log-streaming |
 | Logging streaming event schema | https://tailscale.com/docs/reference/logging-streaming-events |
 | `tsnet` (embed a Tailscale node in a Go program) | https://tailscale.com/docs/reference/tsnet-server-api |
 
@@ -132,6 +132,6 @@ For **endpoint specifics** (request body, response shape, exact field names, que
 
 For **OAuth scope names** — they evolve as new resources are added — fetch the OAuth clients page.
 
-For **webhook event payloads** (`nodeNeedsApproval`, `nodeApproved`, etc.) and signature verification, fetch the webhooks page; the inline pattern only outlines the approval flow.
+For **webhook event payloads** (`nodeNeedsApproval`, `nodeApproved`, others) and signature verification, fetch the webhooks page; the inline pattern only outlines the approval flow.
 
 For **logging fields and event types**, fetch the logging-streaming-events page; the field set is large and changes as Tailscale adds telemetry.

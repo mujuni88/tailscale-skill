@@ -91,7 +91,7 @@ ping 192.168.1.100
 
 ### High availability
 
-Run two subnet routers advertising the same routes for failover. If one goes offline, traffic automatically routes through the other. See Tailscale's high availability documentation for setup details.
+Run two subnet routers advertising the same routes for failover. If one goes offline, traffic automatically routes through the other. refer to Tailscale's high availability documentation for setup details.
 
 ### Overlapping routes
 
@@ -125,3 +125,9 @@ To resolve names for devices behind a subnet, configure split DNS in the admin c
 | **Purpose** | Access specific private subnets | Route all internet traffic |
 | **Traffic** | Only traffic to advertised CIDRs | All non-Tailscale traffic |
 | **Use case** | Reach printers, databases, VPCs | Secure public browsing, geo-access |
+
+## Worked examples
+
+| If the user wants to… | Fetch |
+|---|---|
+| Reach a printer, camera, IoT device, or whole home/office subnet that can't run Tailscale itself | https://tailscale.com/docs/use-cases/personal-or-at-home-use/access-devices-without-tailscale |

@@ -47,7 +47,7 @@ From any tailnet device:
 ssh user@machine-name
 ```
 
-Your existing SSH config and keys are not modified — non-Tailscale SSH connections continue to work.
+Your existing SSH configuration and keys are not modified; non-Tailscale SSH connections continue to work.
 
 ### Access control
 
@@ -66,7 +66,7 @@ SSH access is controlled through the `ssh` section of the tailnet policy file:
 
 ### Check mode
 
-For high-risk connections (e.g., SSH as root), you can require re-authentication:
+For high-risk connections (SSH as `root`), you can require re-authentication:
 
 ```json
 {
@@ -114,7 +114,7 @@ Auth keys can be:
 ## Key expiry
 
 Device keys expire by default (180 days). When a key expires, the device must re-authenticate. To disable expiry:
-- Admin console: Machines page > device menu > **Disable key expiry**
+- Go to the admin console and go to the Machines page > device menu > **Disable key expiry**
 - Tagged devices have expiry disabled by default
 
 For long-running servers, either disable key expiry or use tagged auth keys.

@@ -44,7 +44,7 @@ A systemd service file is included in the `systemd/` subdirectory of the archive
 Three variants are available:
 
 1. **Mac App Store** — GUI app, sandboxed, most common for personal use
-2. **Standalone (GUI)** — Downloaded from tailscale.com, same GUI but not sandboxed
+2. **Standalone (GUI)** — Downloaded from http://tailscale.com/download, same GUI but not sandboxed
 3. **Open source CLI (`tailscaled`)** — Command-line only, required for Tailscale SSH server
 
 Download from https://tailscale.com/download/mac or the Mac App Store.
@@ -58,7 +58,7 @@ For CLI access with the GUI variants, enable CLI integration in the Tailscale me
 
 Download from https://tailscale.com/download/windows or install via MSI for enterprise deployment.
 
-WSL 2 is also supported — see Tailscale docs for WSL 2-specific instructions.
+WSL 2 is also supported; refer to the Tailscale docs for WSL 2 instructions.
 
 ## iOS and Android
 
@@ -72,4 +72,4 @@ Install from the Apple App Store or Google Play Store respectively. Authenticati
 
 ## Uninstalling
 
-Refer to Tailscale's uninstall documentation for platform-specific removal steps. On Linux, use your package manager (`apt remove tailscale`, `yum remove tailscale`, etc.).
+Refer to Tailscale's uninstall documentation for platform-specific removal steps. On Linux, use your package manager (`apt remove tailscale`, `yum remove tailscale`).

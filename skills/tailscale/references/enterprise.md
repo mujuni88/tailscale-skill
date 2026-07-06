@@ -2,21 +2,21 @@
 
 This reference covers the patterns Tailscale is used for at organizational scale: VPN replacement, ephemeral CI/CD access, site-to-site networking, app connectors, auth-key automation, and Terraform-as-code.
 
-> Several of these topics have their own dedicated docs trees and change independently. The shapes below are stable; **WebFetch the matching page** for current OAuth scope names, flag defaults, Terraform resource fields, and platform-specific architecture guidance before applying config.
+> Several of these topics have their own dedicated docs trees and change independently. The shapes below are stable; **WebFetch the matching page** for current OAuth scope names, flag defaults, Terraform resource fields, and platform-specific architecture guidance before applying configuration.
 
 ## Mental model
 
 Tailscale replaces traditional VPN/bastion/jump-host infrastructure with identity-authenticated peer-to-peer connections. The enterprise patterns that build on this core:
 
-- **Infrastructure access** — direct peer connections + ACL grants by group/tag; no public IPs or open ports required. Identity comes from your IdP (Okta, Entra, Google Workspace, etc.).
+- **Infrastructure access** — direct peer connections + ACL grants by group/tag; no public IPs or open ports required. Identity comes from your IdP (Okta, Entra, Google Workspace, others.).
 - **Ephemeral nodes** — short-lived devices that auto-remove after ~30–60 min idle. Used for CI runners, containers, serverless. Created via ephemeral auth keys or OAuth clients with `?ephemeral=true`.
 - **CI/CD integration** — the `tailscale/github-action` adds an ephemeral, tagged node to a GitHub Actions runner for the duration of the workflow. Recommended auth method is workload identity federation (no long-lived secrets).
-- **Site-to-site** — Linux subnet routers on each network advertise CIDRs into the tailnet; SNAT must be disabled for bidirectional traffic. See also `references/subnet-routers.md`.
+- **Site-to-site** — Linux subnet routers on each network advertise CIDRs into the tailnet; SNAT must be disabled for bidirectional traffic. Also refer to `references/subnet-routers.md`.
 - **App connectors** — DNS-based routing (instead of CIDR-based) to SaaS apps and cloud-managed services. Useful for predictable egress IPs and IP allowlists at SaaS providers.
 - **Auth keys** — non-interactive device authentication. Combine flags as needed: `reusable` × `ephemeral` × `preapproved` × `tagged`. Default expiry 90 days, max 90.
 - **Terraform provider** — `tailscale_key`, `tailscale_acl`, `tailscale_dns_*`, and device resources for managing the tailnet as code.
 
-Most enterprise patterns are wired up in the tailnet policy file via groups (humans), tags (machines/services), and grants. See `references/access-control.md` for grant/group/tag syntax in depth.
+Most enterprise patterns are wired up in the tailnet policy file via groups (humans), tags (machines/services), and grants. Refer to `references/access-control.md` for grant/group/tag syntax in depth.
 
 ## Canonical shapes
 
@@ -100,7 +100,7 @@ OAuth clients are tag-scoped credentials that mint short-lived auth keys. Used b
 
 | User is asking about… | Fetch |
 |---|---|
-| Ephemeral nodes — concept and config | https://tailscale.com/docs/features/ephemeral-nodes |
+| Ephemeral nodes — concept and configuration | https://tailscale.com/docs/features/ephemeral-nodes |
 | OAuth clients — scopes, secret handling, ephemeral flag | https://tailscale.com/docs/features/oauth-clients |
 | Running Tailscale unattended (servers, daemons) | https://tailscale.com/docs/how-to/run-unattended |
 | GitHub Actions integration | https://tailscale.com/docs/integrations/github/github-action |
@@ -123,12 +123,21 @@ OAuth clients are tag-scoped credentials that mint short-lived auth keys. Used b
 | Migrating from OpenVPN | https://tailscale.com/docs/solutions/migrate-openvpn-tailscale |
 | API server proxy (no-auth mode for IdP delegation) | https://tailscale.com/docs/kubernetes-operator/api-server-access/noauth-mode |
 
+## Worked examples
+
+| If the user wants to… | Fetch |
+|---|---|
+| Give employees secure access to internal corporate apps and data (VPN replacement) | https://tailscale.com/docs/use-cases/vpn-replacement/secure-access |
+| Reach resources spread across multiple clouds or regions | https://tailscale.com/docs/use-cases/infrastructure-access/access-multi-cloud-or-multi-region-cloud-envs |
+| Present a fixed egress IP that a partner or regulated system can add to an allowlist | https://tailscale.com/docs/use-cases/regulated-environment/static-egress-ip-allowlist |
+| Connect to MongoDB Atlas (or similar SaaS) through a predictable IP | https://tailscale.com/docs/solutions/create-a-secure-connection-to-mongodb-atlas |
+
 ## Answering pattern
 
 For CI/CD questions, the inline workflow + OAuth-client mental model is usually enough; fetch the `github-action` or `oauth-clients` page only when the user needs a specific input field, scope name, or workload identity federation specifics.
 
-For **architectural** questions (e.g., "How should we deploy across three AWS accounts and a GCP project?"), always fetch the relevant reference architecture page — these are the documents most likely to drift as Tailscale's recommended patterns evolve, and they're load-bearing for production decisions.
+For **architectural** questions (like "How should we deploy across three AWS accounts and a GCP project?"), always fetch the relevant reference architecture page — these are the documents most likely to drift as Tailscale's recommended patterns evolve, and they're load-bearing for production decisions.
 
-For **migration** questions (from OpenVPN, Cisco AnyConnect, etc.), fetch the matching `solutions/migrate-*` page; the inline mental model is too generic.
+For **migration** questions (from OpenVPN, Cisco AnyConnect, others), fetch the matching `solutions/migrate-*` page; the inline mental model is too generic.
 
 For Terraform: fetch the provider page rather than recalling resource fields from memory — the provider gains and renames resources frequently.

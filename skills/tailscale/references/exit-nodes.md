@@ -13,9 +13,11 @@ An exit node routes all non-Tailscale internet traffic through a specific device
 
 - Tailscale v1.20+ on both exit node and client devices
 - Exit node must be Linux, macOS, Windows, Android, or tvOS
-- Access control policies must permit exit node usage (the default policy allows it)
+- Access control policies must permit exit node usage (the default policy enables it)
 
 ## Setup by platform
+
+Install Tailscale on both the exit node and client devices first (refer to `references/installation.md`), then follow the platform-specific steps below.
 
 ### Linux (recommended — best performance)
 
@@ -107,4 +109,11 @@ Enterprise plans can enable destination logging for exit node traffic in the adm
 - **macOS/Windows/Android**: Use userspace routing — less performant than Linux's kernel routing
 - **macOS/Windows**: Prevent sleep to keep exit node available
 - **Android**: Significant battery impact; connect to power
-- **GCP Linux VMs**: Known issue — see Tailscale docs for workaround
+- **GCP Linux VMs**: Known issue — refer to the Tailscale docs for workaround
+
+## Worked examples
+
+| If the user wants to… | Fetch |
+|---|---|
+| Test how their app looks or behaves for users in other countries (localization, geo-routing, region-specific content) | https://tailscale.com/docs/use-cases/application-testing/geo-specific-testing |
+| Protect their browsing on untrusted Wi-Fi by routing traffic through a device they own | https://tailscale.com/docs/solutions/secure-traffic-public-wifi-appletv |

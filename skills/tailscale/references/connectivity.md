@@ -18,11 +18,12 @@ All relays forward **encrypted** packets blindly — relays (peer or DERP) canno
 
 | Peer A | Peer B | Result |
 |---|---|---|
-| No NAT / Easy NAT | Any | Direct |
-| Hard NAT | Easy NAT | Direct (via traversal) |
+| No NAT | Any NAT type | Direct |
+| Easy NAT | Easy NAT | Direct |
+| Easy NAT | Hard NAT | Relayed (peer relay or DERP) |
 | Hard NAT | Hard NAT | Relayed (peer relay or DERP) |
 
-"Easy NAT" = UPnP / NAT-PMP / PCP support. "Hard NAT" = symmetric NAT, CGNAT, or strict firewalls.
+The rule: a connection is relayed if both sides are Hard NAT, or if one side is Hard NAT and the other is Easy NAT. Everything else is direct. "Easy NAT" = UPnP / NAT-PMP / PCP support, full-cone NAT, consistent port mapping (IPv6 is treated as Easy NAT). "Hard NAT" = symmetric NAT, CGNAT, or strict firewalls.
 
 DERP also serves a second role: **connection negotiation**. Even direct connections use DERP briefly to exchange discovery (DISCO) packets before switching to direct.
 
@@ -45,7 +46,7 @@ Then in the tailnet policy file, grant relay capability:
   "src": ["autogroup:member"],
   "dst": ["tag:relay"],
   "app": {
-    "tailscale.com/cap/relay": [{}]
+    "tailscale.com/cap/relay": [] // the relay capability takes no parameters
   }
 }]
 ```
@@ -74,7 +75,7 @@ In the tailnet policy file, you can add custom DERP regions or omit defaults:
 }
 ```
 
-The official DERP map (with current region IDs) is at `https://controlplane.tailscale.com/derpmap/default`. **Running your own DERP** is generally not recommended — peer relays solve the latency problem more simply and don't lose access to device sharing or cross-tailnet features.
+The official DERP map (with current region IDs) is at `https://controlplane.tailscale.com/derpmap/default`. **Running your own DERP** is generally not recommended; peer relays solve the latency problem with less complexity and don't lose access to device sharing or cross-tailnet features.
 
 ### Tailnet Lock — initialize and operate
 
@@ -84,7 +85,7 @@ Conceptual pieces:
 - **Tailnet Lock Key (TLK)** — Ed25519 key pair on a signing node; admins designate which are trusted.
 - **Tailnet Key Authority (TKA)** — local signed chain (think git) tracking trusted TLKs and signed node keys.
 - **Authority Update Message (AUM)** — signed message that modifies trusted-key state.
-- **Disablement secrets** — 10 strings generated at init; the **only** way to disable Tailnet Lock if needed. **Store them in a safe / password manager.** Losing them means the tailnet cannot be recovered without Tailscale support.
+- **Disablement secrets** — `tailscale lock init` generates and displays ten; any single one is enough to disable Tailnet Lock. They are the **only** way to disable it if needed. **Store them in a safe / password manager.** Losing them means the tailnet cannot be recovered without Tailscale support.
 
 Core CLI flow (full setup is admin-console-driven):
 
@@ -106,6 +107,18 @@ tailscale lock local-disable                       # Emergency: ignore TL on thi
 - **Mutually exclusive with Device Approval** — pick one.
 - Android devices can receive signatures but cannot sign.
 - Initial trust is "trust on first use" from the coordination server — verify `tailscale lock status` on multiple nodes after init.
+
+## Remote desktop over the tailnet (RDP, VNC, RustDesk)
+
+Reaching a desktop remotely is just a TCP connection over the tailnet. There is no port forwarding and no exposing the machine to the public internet. The remote device joins the tailnet, and you point your desktop client at its **MagicDNS hostname** or **100.x Tailscale IP**.
+
+**RDP (Windows).** Install Tailscale on the Windows PC (Pro, Enterprise, Education, or Server edition, with RDP enabled). From any tailnet device, open an RDP client. Options include the built-in **Remote Desktop Connection**, the **Windows App** on macOS, iOS, and Android, or **Remmina** and **GNOME Connections** on Linux. Enter the PC's Tailscale IP or MagicDNS name in the computer or PC-name field. Port `3389` is never exposed publicly, because the connection rides the encrypted tailnet. Disable key expiry on always-on target machines so they stay reachable.
+
+**RustDesk.** RustDesk normally needs a relay or ID server in the middle to broker connections. Over Tailscale that is unnecessary: devices connect directly, peer-to-peer, with no RustDesk server to run or rely on. In RustDesk, enable **Direct IP access** under Security (set a permanent password for headless machines), then connect to the target's Tailscale IP or MagicDNS name.
+
+**VNC** works the same way. Run the VNC server on the target, then connect the viewer to its Tailscale IP or MagicDNS name.
+
+Restrict who can reach these with tailnet policy. For example, allow only specific users or groups to reach `tcp:3389` on the target tag.
 
 ## Where to find current information
 
@@ -147,14 +160,45 @@ tailscale lock local-disable                       # Emergency: ignore TL on thi
 
 ### Connectivity troubleshooting
 
-| Topic | Fetch |
+The troubleshooting docs are organized as a hub with per-platform and per-topic sections. Start at the section that matches the user's symptom, or the hub if unsure, then WebFetch the specific page.
+
+| If the user is troubleshooting… | Fetch |
 |---|---|
-| Hard NAT issues | https://tailscale.com/docs/reference/troubleshooting/network-configuration/hard-nat-issues |
+| Anything, not sure where to start (troubleshooting hub) | https://tailscale.com/docs/reference/troubleshooting |
+| First steps for any network problem | https://tailscale.com/docs/reference/troubleshooting/basic-network-troubleshooting |
+| Devices can't connect to each other, the internet, or the LAN | https://tailscale.com/docs/reference/troubleshooting/connectivity |
+| NAT, routing, DNS, subnet, or IP-conflict issues | https://tailscale.com/docs/reference/troubleshooting/network-configuration |
+| Slow throughput to internet destinations | https://tailscale.com/docs/reference/troubleshooting/poor-performance-internet |
+| Slow throughput between tailnet devices | https://tailscale.com/docs/reference/troubleshooting/poor-performance-tailnet |
+| Can't resolve domain names (MagicDNS/DNS) | https://tailscale.com/docs/reference/troubleshooting/resolve-domain-names-failure |
+| A macOS, iOS, or Apple TV problem | https://tailscale.com/docs/reference/troubleshooting/apple |
+| A Windows problem | https://tailscale.com/docs/reference/troubleshooting/windows |
+| A Linux problem | https://tailscale.com/docs/reference/troubleshooting/linux |
+| A mobile (battery, app routing) problem | https://tailscale.com/docs/reference/troubleshooting/mobile |
+| A cloud environment problem (AWS/GCP routes, Oracle, subnets) | https://tailscale.com/docs/reference/troubleshooting/cloud |
+| A specific hard-NAT problem | https://tailscale.com/docs/reference/troubleshooting/network-configuration/hard-nat-issues |
 | CGNAT conflicts (with 100.64/10 ranges) | https://tailscale.com/docs/reference/troubleshooting/network-configuration/cgnat-conflicts |
+
+### Remote desktop
+
+| If the user wants to… | Fetch |
+|---|---|
+| Remote into a Windows PC (RDP) from elsewhere without exposing it to the internet | https://tailscale.com/docs/solutions/access-remote-desktops-using-windows-rdp |
+| Use RustDesk to reach another desktop, without running or paying for a relay server | https://tailscale.com/docs/solutions/access-remote-desktops-with-rustdesk |
+
+### At-home access (client on each device, reach by MagicDNS or 100.x)
+
+These recipes put the Tailscale client on the devices and reach a home service by its MagicDNS name or `100.x` IP, with no ports exposed. (For a device that can't run Tailscale, use a subnet router instead: refer to `references/subnet-routers.md`.)
+
+| If the user wants to… | Fetch |
+|---|---|
+| Reach their home NAS, Plex/JellyFin, or file shares from anywhere | https://tailscale.com/docs/use-cases/personal-or-at-home-use/access-nas-media-file-servers |
+| Block ads across all their devices, even when away from home | https://tailscale.com/docs/solutions/block-ads-all-devices-anywhere-using-raspberry-pi |
+| Check a home camera from their phone while out | https://tailscale.com/docs/solutions/set-up-dogcam |
 
 ## Answering pattern
 
-For **"why is my connection slow / relayed"** questions, the mental model + NAT matrix + `tailscale ping`/`netcheck` output (see `references/cli.md`) is usually enough to diagnose. Fetch the connection-types or troubleshooting pages only when you need exact criteria (e.g., what counts as Easy NAT for a specific carrier).
+For **"why is my connection slow / relayed"** questions, the mental model + NAT matrix + `tailscale ping`/`netcheck` output (refer to `references/cli.md`) is usually enough to diagnose. Fetch the connection-types or troubleshooting pages only when you need exact criteria (for example "what counts as Easy NAT for a specific carrier").
 
 For **peer-relay setup** questions, the inline shape (flag + grant) is enough to start. Fetch the peer-relay page for platform-specific notes and edge cases.
 

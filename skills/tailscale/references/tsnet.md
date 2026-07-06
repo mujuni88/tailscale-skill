@@ -4,18 +4,18 @@
 
 Common use cases:
 
-- Run multiple services on one host, each with its own tailnet identity and access rules (e.g., admin tool + metrics endpoint, separately ACL'd).
+- Run multiple services on one host, each with its own tailnet identity and access rules, like an admin tool + metrics endpoint with separate access controls).
 - Expose an internal HTTP/TCP service without opening a public port — `srv.ListenTLS(":443")` provisions a real Let's Encrypt cert automatically.
 - Optionally expose to the public internet via Funnel (`srv.ListenFunnel(":443")`).
 - Make outgoing calls to other tailnet devices from inside your binary (`srv.HTTPClient()`, `srv.Dial(...)`).
 - Build serverless or short-lived workers as ephemeral tailnet nodes (`Server.Ephemeral = true`).
 - Identify the calling user from the WireGuard identity (`LocalClient.WhoIs`) and authorize via capability grants in the policy file.
 
-> tsnet is **Go-only**. For other languages, run the regular `tailscaled` daemon (often as a sidecar) — see `containers.md`.
+> tsnet is **Go-only**. For other languages, run the regular `tailscaled` daemon (often as a sidecar) — refer to `containers.md`.
 
 ## Mental model
 
-A `tsnet.Server` is one tailnet node. You set fields on it (hostname, auth, state dir, tags), then call `Start()` — or just call `Listen()` / `HTTPClient()` / `LocalClient()` and they will `Start` implicitly. Each `Server` keeps its own state directory (default: OS user config dir, subdir `tsnet-<binary>`). Run multiple `Server` instances in one process to give one binary multiple tailnet identities — each instance must use a distinct `Dir`.
+A `tsnet.Server` is one tailnet node. You set fields on it (hostname, auth, state dir, tags), then call `Start()` — or just call `Listen()` / `HTTPClient()` / `LocalClient()` and they will `Start` implicitly. Each `Server` keeps its own state directory (default: OS user configuration directory, with the `tsnet-<binary>` subdirectory). Run multiple `Server` instances in one process to give one binary multiple tailnet identities — each instance must use a distinct `Dir`.
 
 Listeners are normal `net.Listener` values; the rest of your code can be plain `net/http`, gRPC, raw TCP, Gin, gorilla/mux — anything that accepts a listener.
 
@@ -100,8 +100,8 @@ Four ways to authenticate a `tsnet.Server`, in increasing order of automation:
 | Method | Set via | Use when |
 |---|---|---|
 | Interactive auth URL | (no auth set) | Local development; you're fine clicking a login link on first start |
-| **Auth key** | `Server.AuthKey` or `TS_AUTHKEY` env | Most servers and containers — simple to issue and revoke |
-| **OAuth client** | `Server.ClientSecret` (+ `Server.AdvertiseTags`) or `TS_CLIENT_SECRET` env | Fleets / long-running deployments where you want scoped, rotatable credentials and auto-minted auth keys |
+| **Auth key** | `Server.AuthKey` or `TS_AUTHKEY` environment variable | Most servers and containers — quick to issue and revoke |
+| **OAuth client** | `Server.ClientSecret` (+ `Server.AdvertiseTags`) or `TS_CLIENT_SECRET` environment variable | Fleets / long-running deployments where you want scoped, rotatable credentials and auto-minted auth keys |
 | **Workload identity (OIDC)** | `Server.ClientID` + `Server.IDToken` (+ `Server.AdvertiseTags`) | Running in GCP / Azure / GitHub Actions and want no static secret — the cloud provider's OIDC token is exchanged for an auth key |
 
 `Server.AuthKey` takes precedence over `TS_AUTHKEY`, which takes precedence over the legacy `TS_AUTH_KEY`. OAuth and workload-identity flows **require** `Server.AdvertiseTags` — the minted auth key is tag-scoped, and untagged tsnet nodes can't be created this way. The OAuth client needs the `auth_keys` write scope and must own the tag.
@@ -115,7 +115,7 @@ srv := &tsnet.Server{
 }
 ```
 
-Generate the key in the admin console (**Settings → Keys**). Recommended settings for a long-running tsnet server: add a tag (e.g., `tag:myapp`), and **don't** mark ephemeral so the device persists across restarts. For genuinely short-lived workers, set `Server.Ephemeral = true` instead and the device is cleaned up after disconnect.
+Generate the key in the admin console (**Settings → Keys**). Recommended settings for a long-running tsnet server: add a tag (such as `tag:myapp`), and **don't** mark ephemeral so the device persists across restarts. For genuinely short-lived workers, set `Server.Ephemeral = true` instead and the device is cleaned up after disconnect.
 
 ### OAuth client
 
@@ -131,7 +131,7 @@ tsnet exchanges the client secret for a short-lived auth key on each `Start`.
 
 ### Persistent state directory
 
-State (machine key, node key, peer info) lives in `Server.Dir`. Default is the user config dir; override it when running as a service or in a container:
+State (machine key, node key, peer info) lives in `Server.Dir`. Default is the user configuration directory; override it when running as a service or in a container:
 
 ```go
 srv := &tsnet.Server{
@@ -144,7 +144,7 @@ If you run multiple `tsnet.Server` instances in one process, each needs its own 
 
 ### Optional but recommended
 
-- `hostinfo.SetApp("myapp")` before `Start()` — surfaces your app name in admin-console Hostinfo so operators can see what's running.
+- `hostinfo.SetApp("myapp")` before `Start()` — surfaces your app name in admin-console `Hostinfo` so operators can identify what's running.
 - `srv.Logf = func(string, ...any) {}` — tsnet's default logging is noisy; silence it and add a verbose flag for debugging.
 - `srv.Up(ctx)` after `Start()` — blocks until the node is fully online; useful before calling `LocalClient.Status` or starting to serve.
 
@@ -166,7 +166,7 @@ Declare the tag and assign an owner. If the node authenticates with an auth key,
 
 ### Network access — who can reach the app
 
-Grants are the recommended access primitive (see `access-control.md` — don't write new ACLs). Allow `group:engineering` to reach the app on HTTPS:
+Grants are the recommended access primitive (refer to `access-control.md` — don't write new ACLs). Allow `group:engineering` to reach the app on HTTPS:
 
 ```json
 {
@@ -180,7 +180,7 @@ Grants are the recommended access primitive (see `access-control.md` — don't w
 }
 ```
 
-Restrict the tsnet app's outbound reach (e.g., only tagged Postgres servers):
+Restrict the tsnet app's outbound reach (such as only tagged Postgres servers):
 
 ```json
 {
@@ -196,7 +196,7 @@ Restrict the tsnet app's outbound reach (e.g., only tagged Postgres servers):
 
 ### Application-layer access — capability grants
 
-Pure network access is rarely enough — most tsnet apps also have an authorization layer (admin vs. read-only, per-team permissions, etc.). **Don't hardcode that in the binary.** Use a **capability grant** with a custom name under your domain (`tailscale.com/cap/<yourapp>`), and read it in the request handler from `WhoIs(...).CapMap`. Operators change roles by editing the policy file, not by redeploying.
+Pure network access is rarely enough — most tsnet apps also have an authorization layer (admin vs. read-only, per-team permissions). **Don't hard-code that in the binary.** Use a **capability grant** with a custom name under your domain (`tailscale.com/cap/<yourapp>`), and read it in the request handler from `WhoIs(...).CapMap`. Operators change roles by editing the policy file, not by redeploying.
 
 Policy file — grant admin to a group:
 
@@ -246,7 +246,7 @@ func currentUser(ctx context.Context, lc *local.Client, remoteAddr string) (logi
 }
 ```
 
-For tagged callers (e.g., other tsnet services calling this one), `who.UserProfile.LoginName` returns `"tagged-devices"` rather than a user email. Handle that explicitly if you need machine-to-machine authorization, and consider granting capabilities to the calling tag in the policy file the same way.
+For tagged callers (other tsnet services calling this one), `who.UserProfile.LoginName` returns `"tagged-devices"` rather than a user email. Handle that explicitly if you need machine-to-machine authorization, and consider granting capabilities to the calling tag in the policy file the same way.
 
 ## HTTPS, Funnel, and Tailscale Services
 
@@ -266,7 +266,7 @@ publicLn, _  := srv.ListenFunnel("tcp", ":443", tsnet.FunnelOnly())
 privateLn, _ := srv.ListenTLS("tcp", ":443")
 ```
 
-Funnel requires the `funnel` nodeAttr in the policy file — see `sharing-and-publishing.md`.
+Funnel requires the `funnel` `nodeAttr` in the policy file. Refer to `sharing-and-publishing.md`.
 
 `Server.ListenService("svc:name", tsnet.ServiceModeHTTP{HTTPS: true, Port: 443})` registers the app as a **Tailscale Service** — a stable virtual hostname/VIP that can be backed by one or more tsnet processes. This is the right pattern for ephemeral infrastructure (fly.io, Cloud Run, k8s pods with non-persistent state) where individual node identities come and go but the service identity should stay stable. Requires a tagged node, a service definition, and an auto-approver in the policy file:
 
@@ -289,7 +289,7 @@ Funnel requires the `funnel` nodeAttr in the policy file — see `sharing-and-pu
 | `ListenService(svc, mode)` | Register as a Tailscale Service (stable identity, multi-instance) |
 | `Dial(ctx, network, addr)` | Outgoing connection from inside the tailnet |
 | `HTTPClient()` | `*http.Client` whose transport routes through the tailnet |
-| `LocalClient()` | Talks to embedded `tailscaled` — `WhoIs`, `GetCertificate`, `Status`, etc. |
+| `LocalClient()` | Talks to embedded `tailscaled` — `WhoIs`, `GetCertificate`, `Status`, others. |
 | `Up(ctx)` | Block until the node is online (after `Start`) |
 | `CertDomains()` | Domains the node can mint TLS certs for |
 | `Start()` / `Close()` | Lifecycle (most methods Start implicitly; always defer Close) |
@@ -299,8 +299,8 @@ Funnel requires the `funnel` nodeAttr in the policy file — see `sharing-and-pu
 1. **Tag the node**, don't run untagged — keeps the device out of users' personal device lists and makes ACLs writable.
 2. **Persist `Server.Dir`** on a mounted volume; persist any app database file too. Without this the node re-registers as a new device each restart.
 3. **Authenticate with OAuth or workload identity** for fleet deployments — auth keys are fine for single-instance setups but rotate poorly.
-4. **Read authorization from `CapMap`**, not from hardcoded user lists. Operators change roles in the policy file, not by redeploying.
-5. **Check `status.Self.HasCap(tailcfg.CapabilityHTTPS)`** and `srv.CertDomains()` before serving TLS — fail clearly if HTTPS isn't enabled in the tailnet.
+4. **Read authorization from `CapMap`**, not from hard-coded user lists. Operators change roles in the policy file, not by redeploying.
+5. **Check `status.Self.HasCap(tailcfg.CapabilityHTTPS)`** and `srv.CertDomains()` before serving TLS. Fail explicitly if HTTPS isn't enabled in the tailnet.
 6. **For ephemeral hosts** (fly.io, k8s, serverless), prefer `ListenService` — the service identity survives even when individual nodes are recycled.
 7. **Defer `srv.Close()`** in `main` so the device cleanly disconnects.
 
@@ -320,6 +320,6 @@ Funnel requires the `funnel` nodeAttr in the policy file — see `sharing-and-pu
 
 ## Answering pattern
 
-For "how do I build X with tsnet" questions, the inline `Server` shape, the four auth methods, and the tag-based grant + capability pattern are usually enough to write a working program. WebFetch the `tsnet-server-api` page when the user needs an exact field name (`Server.Ephemeral`, `Server.ControlURL`, `Server.UserLogf`, `Server.RunWebClient`, etc.) or behavior detail you're not certain of — that page is the source of truth and grows over time. WebFetch the auth-keys / OAuth pages when the user needs the current admin-console flow.
+For "how do I build X with tsnet" questions, the inline `Server` shape, the four auth methods, and the tag-based grant + capability pattern are usually enough to write a working program. WebFetch the `tsnet-server-api` page when the user needs an exact field name (`Server.Ephemeral`, `Server.ControlURL`, `Server.UserLogf`, `Server.RunWebClient`, or others) or behavior detail you're not certain of — that page is the source of truth and grows over time. WebFetch the auth-keys / OAuth pages when the user needs the current admin-console flow.
 
-When the user asks how to expose a tsnet app on the public internet, route them to Funnel (`ListenFunnel`) — see `sharing-and-publishing.md`. When they want stable identity across restarts or multiple replicas, point them at `ListenService` and the `register-service` how-to. For app-level authorization, recommend capability grants (`tailscale.com/cap/<yourapp>`) over hardcoded user lists in the binary.
+When the user asks how to expose a tsnet app on the public internet, route them to Funnel (`ListenFunnel`) — refer to `sharing-and-publishing.md`. When they want stable identity across restarts or multiple replicas, point them at `ListenService` and the `register-service` how-to. For app-level authorization, recommend capability grants (`tailscale.com/cap/<yourapp>`) over hard-coded user lists in the binary.

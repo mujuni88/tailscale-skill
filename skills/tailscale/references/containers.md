@@ -2,7 +2,7 @@
 
 Tailscale runs inside containers via the `tailscale/tailscale` image, and inside Kubernetes via the Tailscale Operator. Both let containers/pods join your tailnet for secure access without exposing public ports.
 
-> The **Kubernetes operator** docs were recently reorganized — concepts, ingress, egress, manage-and-configure, and reference now live in their own sub-trees under `/docs/kubernetes-operator/`. The shapes below are stable; **WebFetch the matching page** for current CRD fields, annotations, OAuth scope names, and supported versions before committing config.
+> The **Kubernetes operator** docs live in their own sub-trees under `/docs/kubernetes-operator/`. The shapes below are stable; **WebFetch the matching page** for current CRD fields, annotations, OAuth scope names, and supported versions before committing configuration.
 
 ## Docker
 
@@ -58,14 +58,14 @@ volumes:
 
 With `network_mode: service:tailscale`, `my-app` is reachable via the Tailscale container's IP and MagicDNS name. Works the same with Podman / Colima / Portainer.
 
-### Common env vars (verify full list against docs)
+### Common environment variables (verify full list against docs)
 
 - `TS_AUTHKEY` — auth key (append `?ephemeral=true` for short-lived containers; device auto-removes ~30–60 min after exit).
 - `TS_HOSTNAME` — custom hostname.
 - `TS_USERSPACE` — `false` for kernel-mode networking (faster; needs `NET_ADMIN`/`NET_RAW` + `/dev/net/tun`).
 - `TS_ROUTES` — advertise subnet CIDRs.
 - `TS_STATE_DIR` — state path (mount as volume).
-- `TS_SERVE_CONFIG` — JSON config for Serve/Funnel.
+- `TS_SERVE_CONFIG` — JSON configuration for Serve/Funnel.
 - `TS_TAILNET_TARGET_IP` / `TS_TAILNET_TARGET_FQDN` — proxy non-tailnet traffic to a tailnet device.
 - `TS_CLIENT_ID` / `TS_CLIENT_SECRET` — OAuth credentials instead of auth keys.
 
@@ -74,7 +74,7 @@ With `network_mode: service:tailscale`, `my-app` is reachable via the Tailscale 
 | Topic | Fetch |
 |---|---|
 | Docker overview | https://tailscale.com/docs/features/containers/docker |
-| Image params / env var reference | https://tailscale.com/docs/features/containers/docker/docker-params |
+| Image parameters / environment variable reference | https://tailscale.com/docs/features/containers/docker/docker-params |
 | Image components | https://tailscale.com/docs/features/containers/docker/docker-components |
 | Docker Desktop integration | https://tailscale.com/docs/features/containers/docker/docker-desktop |
 | Connect a standalone container | https://tailscale.com/docs/features/containers/docker/how-to/connect-docker-standalone |
@@ -188,7 +188,7 @@ spec:
 | Concepts index | https://tailscale.com/docs/kubernetes-operator/concepts |
 | Architecture | https://tailscale.com/docs/kubernetes-operator/concepts/architecture |
 | DNSConfig CRD | https://tailscale.com/docs/kubernetes-operator/concepts/dnsconfig |
-| ProxyClass CRD (per-proxy config) | https://tailscale.com/docs/kubernetes-operator/concepts/proxyclass |
+| ProxyClass CRD (per-proxy configuration) | https://tailscale.com/docs/kubernetes-operator/concepts/proxyclass |
 | ProxyGroup CRD (HA proxies) | https://tailscale.com/docs/kubernetes-operator/concepts/proxygroup |
 | Ingress overview | https://tailscale.com/docs/kubernetes-operator/ingress |
 | Expose to internet (Funnel) | https://tailscale.com/docs/kubernetes-operator/ingress/expose-workload-to-internet |
@@ -229,8 +229,17 @@ spec:
 | Troubleshooting | https://tailscale.com/docs/kubernetes-operator/reference/troubleshooting |
 | **Anything else / topic not listed** | https://tailscale.com/docs/kubernetes-operator |
 
+## Worked examples
+
+| If the user wants to… | Fetch |
+|---|---|
+| Connect a pod to the tailnet with a sidecar container | https://tailscale.com/docs/solutions/connect-kubernetes-pods-to-tailnet-using-sidecar |
+| Manage deployments across many clusters with ArgoCD | https://tailscale.com/docs/solutions/manage-multi-cluster-kubernetes-deployments-argocd |
+| Sync secrets across clusters (External Secrets Operator) | https://tailscale.com/docs/solutions/sync-kubernetes-secrets-across-clusters-external-secrets |
+| Expose services with custom domains via the Gateway API | https://tailscale.com/docs/solutions/kubernetes-operator-byod-gateway-api |
+
 ## Answering pattern
 
-For Docker: the inline patterns are usually enough. Fetch the docs only when the user needs a specific env var, image variant, or platform-specific quirk.
+For Docker: the inline patterns are usually enough. Fetch the docs only when the user needs a specific environment variable, image variant, or platform-specific quirk.
 
 For Kubernetes: the operator surface is large and reorganized recently. Match the user's question to a row above, WebFetch that page, and quote CRD fields, annotation names, and Helm values verbatim from the fetched content. Don't invent CRD fields from memory — they change.
