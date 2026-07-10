@@ -237,7 +237,7 @@ Read the reference file that matches the user's question. Each file is self-cont
 
 | Topic | Reference file | When to read |
 |-------|---------------|--------------|
-| tsnet (Go library) | `references/tsnet.md` | Embedding Tailscale in a Go program, hello-world tsnet app, authenticating to the tailnet (auth keys / OAuth / workload identity), controlling app access via tags and capability grants, Funnel/Serve from tsnet, registering as a Tailscale Service |
+| tsnet (Go library) | `references/tsnet.md` | Building a Go application with Tailscale built in, so the app is itself a device on the tailnet; apps that authenticate their users by Tailscale identity with no separate login flow; apps that control access with tags and capability grants managed in the policy file; running several such apps on one host, each with its own identity and access rules; reaching or serving private tailnet services from Go with nothing exposed publicly |
 
 ### AI & LLM governance
 

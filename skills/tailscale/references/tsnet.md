@@ -1,13 +1,14 @@
 # tsnet — embed Tailscale in a Go program
 
-`tsnet` is a Go library that lets a program join a tailnet as its own device — its own Tailscale IP, MagicDNS name, and ACL identity. Use it when you want an application — not the machine it runs on — to be a first-class tailnet member.
+`tsnet` is a Go library that lets a program join a tailnet as its own device, with its own Tailscale IP, MagicDNS name, and ACL identity. Use it when you want an application, not the machine it runs on, to be a first-class tailnet member. Serving HTTP is the best-known use, but tsnet is a general networking library. It gives your program tailnet-scoped listeners across protocols (TCP, TLS, UDP, SSH), outbound connections and clients, and a full LocalAPI, not just an HTTP server.
 
 Common use cases:
 
-- Run multiple services on one host, each with its own tailnet identity and access rules, like an admin tool + metrics endpoint with separate access controls).
-- Expose an internal HTTP/TCP service without opening a public port — `srv.ListenTLS(":443")` provisions a real Let's Encrypt cert automatically.
+- Run multiple services on one host, each with its own tailnet identity and access rules, like an admin tool and metrics endpoint with separate access controls.
+- Expose an internal service over any protocol without opening a public port: plain TCP (`srv.Listen`), TLS/HTTPS with an auto-provisioned Let's Encrypt cert (`srv.ListenTLS(":443")`), UDP (`srv.ListenPacket`), or Tailscale SSH (`srv.ListenSSH`).
 - Optionally expose to the public internet via Funnel (`srv.ListenFunnel(":443")`).
-- Make outgoing calls to other tailnet devices from inside your binary (`srv.HTTPClient()`, `srv.Dial(...)`).
+- Make outgoing calls to other tailnet devices from inside your binary with `srv.Dial(...)` for any connection or `srv.HTTPClient()` for HTTP. A client-only program can reach private tailnet services with no inbound listener at all.
+- Front an external, non-Go backend by advertising it as a Tailscale Service via a reverse proxy (`ListenService` plus `httputil.NewSingleHostReverseProxy`).
 - Build serverless or short-lived workers as ephemeral tailnet nodes (`Server.Ephemeral = true`).
 - Identify the calling user from the WireGuard identity (`LocalClient.WhoIs`) and authorize via capability grants in the policy file.
 
@@ -102,9 +103,9 @@ Four ways to authenticate a `tsnet.Server`, in increasing order of automation:
 | Interactive auth URL | (no auth set) | Local development; you're fine clicking a login link on first start |
 | **Auth key** | `Server.AuthKey` or `TS_AUTHKEY` environment variable | Most servers and containers — quick to issue and revoke |
 | **OAuth client** | `Server.ClientSecret` (+ `Server.AdvertiseTags`) or `TS_CLIENT_SECRET` environment variable | Fleets / long-running deployments where you want scoped, rotatable credentials and auto-minted auth keys |
-| **Workload identity (OIDC)** | `Server.ClientID` + `Server.IDToken` (+ `Server.AdvertiseTags`) | Running in GCP / Azure / GitHub Actions and want no static secret — the cloud provider's OIDC token is exchanged for an auth key |
+| **Workload identity (OIDC)** | `Server.ClientID` + `Server.IDToken` or environment variables `TS_CLIENT_ID` + `TS_ID_TOKEN` (+ `Server.AdvertiseTags`), plus a blank import (refer to the workload identity section below) | Running in GCP, Azure, or GitHub Actions and want no static secret. The cloud provider's OIDC token is exchanged for an auth key |
 
-`Server.AuthKey` takes precedence over `TS_AUTHKEY`, which takes precedence over the legacy `TS_AUTH_KEY`. OAuth and workload-identity flows **require** `Server.AdvertiseTags` — the minted auth key is tag-scoped, and untagged tsnet nodes can't be created this way. The OAuth client needs the `auth_keys` write scope and must own the tag.
+`Server.AuthKey` takes precedence over `TS_AUTHKEY`, which takes precedence over the legacy `TS_AUTH_KEY`. OAuth and workload-identity flows **require** `Server.AdvertiseTags`. The minted auth key is tag-scoped, and untagged tsnet nodes can't be created this way. The OAuth client needs the `auth_keys` write scope and a tag in `AdvertiseTags`.
 
 ### Auth key
 
@@ -129,6 +130,25 @@ srv := &tsnet.Server{
 
 tsnet exchanges the client secret for a short-lived auth key on each `Start`.
 
+### Workload identity (OIDC)
+
+For fleets running in a cloud provider (GCP, Azure, GitHub Actions), exchange the provider's OIDC token for an auth key with no static secret. Workload identity federation is **not linked into tsnet by default**, to keep cloud-provider dependencies out of programs that don't use it. Add a blank import or tsnet silently ignores `ClientID`, `IDToken`, and `Audience` and continues to the next auth method:
+
+```go
+import _ "tailscale.com/feature/identityfederation"
+```
+
+```go
+srv := &tsnet.Server{
+	Hostname:      "myapp",
+	ClientID:      os.Getenv("TS_CLIENT_ID"),
+	IDToken:       os.Getenv("TS_ID_TOKEN"),
+	AdvertiseTags: []string{"tag:myapp"},
+}
+```
+
+Instead of supplying `IDToken` yourself, set `Server.Audience` (or `TS_AUDIENCE`) and tsnet requests the ID token from the cloud provider on your behalf before exchanging it. Refer to workload-identity-federation docs for the automatic cloud token discovery flow.
+
 ### Persistent state directory
 
 State (machine key, node key, peer info) lives in `Server.Dir`. Default is the user configuration directory; override it when running as a service or in a container:
@@ -147,6 +167,7 @@ If you run multiple `tsnet.Server` instances in one process, each needs its own 
 - `hostinfo.SetApp("myapp")` before `Start()` — surfaces your app name in admin-console `Hostinfo` so operators can identify what's running.
 - `srv.Logf = func(string, ...any) {}` — tsnet's default logging is noisy; silence it and add a verbose flag for debugging.
 - `srv.Up(ctx)` after `Start()` — blocks until the node is fully online; useful before calling `LocalClient.Status` or starting to serve.
+- `srv.ControlURL = "https://control.example.com"` (or `TS_CONTROL_URL`): point at a self-hosted coordination server. Empty falls back to the environment variable, then to Tailscale's default.
 
 ## Controlling access via tailnet policy
 
@@ -279,6 +300,25 @@ Funnel requires the `funnel` `nodeAttr` in the policy file. Refer to `sharing-an
 
 `ListenService` returns `tsnet.ErrUntaggedServiceHost` if the node has no tags — surface that as a clear error to the operator. Note that in service mode, the tsnet internal proxy injects identity headers (`Tailscale-User-Login`, `X-Forwarded-For`) on loopback connections; trust them only when the immediate `RemoteAddr` is loopback, and still look up capabilities via `WhoIs` on the forwarded IP for authorization.
 
+Tailscale Services require devices running Tailscale v1.86.0 or later. The returned listener carries the service's `FQDN`, useful for logging the reachable address:
+
+```go
+ln, _ := srv.ListenService("svc:my-service", tsnet.ServiceModeHTTP{HTTPS: true, Port: 443})
+log.Printf("Listening on https://%v\n", ln.FQDN)
+```
+
+To advertise a Service on multiple ports, call `ListenService` once per port. To front a backend that is external to the tsnet program (any non-Go server), serve a reverse proxy on the listener instead of your own handler:
+
+```go
+const targetAddress = "1.2.3.4:80" // the backing server
+
+ln, _ := srv.ListenService("svc:my-service", tsnet.ServiceModeHTTP{HTTPS: true, Port: 443})
+log.Fatal(http.Serve(ln, httputil.NewSingleHostReverseProxy(&url.URL{
+	Scheme: "http",
+	Host:   targetAddress,
+})))
+```
+
 ## Useful Server methods
 
 | Method | Purpose |
@@ -287,9 +327,12 @@ Funnel requires the `funnel` `nodeAttr` in the policy file. Refer to `sharing-an
 | `ListenTLS(network, addr)` | TLS listener with auto-provisioned cert (HTTPS) |
 | `ListenFunnel(network, addr, opts...)` | TLS listener exposed publicly via Funnel; `tsnet.FunnelOnly()` for public-only |
 | `ListenService(svc, mode)` | Register as a Tailscale Service (stable identity, multi-instance) |
+| `ListenSSH(addr)` | Tailscale SSH listener; connections carry peer identity. Needs blank import `_ "tailscale.com/feature/ssh"` or it errors |
+| `ListenPacket(network, addr)` | UDP listener returning `net.PacketConn`; network is `udp`/`udp4`/`udp6`, the address needs an explicit IP (from `TailscaleIPs()`) |
 | `Dial(ctx, network, addr)` | Outgoing connection from inside the tailnet |
 | `HTTPClient()` | `*http.Client` whose transport routes through the tailnet |
 | `LocalClient()` | Talks to embedded `tailscaled` — `WhoIs`, `GetCertificate`, `Status`, others. |
+| `TailscaleIPs()` | The node's own tailnet IPv4/IPv6 (after `Start`) |
 | `Up(ctx)` | Block until the node is online (after `Start`) |
 | `CertDomains()` | Domains the node can mint TLS certs for |
 | `Start()` / `Close()` | Lifecycle (most methods Start implicitly; always defer Close) |
@@ -320,6 +363,6 @@ Funnel requires the `funnel` `nodeAttr` in the policy file. Refer to `sharing-an
 
 ## Answering pattern
 
-For "how do I build X with tsnet" questions, the inline `Server` shape, the four auth methods, and the tag-based grant + capability pattern are usually enough to write a working program. WebFetch the `tsnet-server-api` page when the user needs an exact field name (`Server.Ephemeral`, `Server.ControlURL`, `Server.UserLogf`, `Server.RunWebClient`, or others) or behavior detail you're not certain of — that page is the source of truth and grows over time. WebFetch the auth-keys / OAuth pages when the user needs the current admin-console flow.
+For "how do I build X with tsnet" questions, the inline `Server` shape, the four auth methods, and the tag-based grant + capability pattern are usually enough to write a working program. Match the listener to the protocol the user needs (`Listen` for TCP, `ListenTLS` for HTTPS, `ListenPacket` for UDP, `ListenSSH` for SSH, `Dial`/`HTTPClient` for outbound), and remember the SSH and workload-identity features need their blank imports. WebFetch the `tsnet-server-api` page when the user needs an exact field name (`Server.Ephemeral`, `Server.ControlURL`, `Server.Audience`, `Server.UserLogf`, `Server.RunWebClient`, or others) or behavior detail you're not certain of. That page is the source of truth and grows over time. WebFetch the auth-keys / OAuth pages when the user needs the current admin-console flow.
 
 When the user asks how to expose a tsnet app on the public internet, route them to Funnel (`ListenFunnel`) — refer to `sharing-and-publishing.md`. When they want stable identity across restarts or multiple replicas, point them at `ListenService` and the `register-service` how-to. For app-level authorization, recommend capability grants (`tailscale.com/cap/<yourapp>`) over hard-coded user lists in the binary.

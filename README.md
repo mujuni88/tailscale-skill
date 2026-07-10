@@ -5,7 +5,9 @@ A skill that gives your coding agent deep knowledge of Tailscale and the wider T
 This skill works with Claude Code, Cursor, OpenCode, OpenAI Codex, Pi, and any other agent that follows the [Agent Skills standard](https://agentskills.io/home).
 
 > [!NOTE]
-> Early alpha. This skill is not yet officially supported. Please don't file Tailscale support tickets for issues you hit with it, and treat its output as a starting point rather than a final answer. Configuration syntax in particular evolves; the skill links out to canonical [Tailscale documentation](https://tailscale.com/docs) for the parts that change most often.
+> This skill is a public Alpha release and is not yet supported. Please don't file Tailscale support tickets for issues you discover with it, and treat its output as a starting point rather than a final answer. Configuration syntax in particular evolves; the skill links out to canonical [Tailscale documentation](https://tailscale.com/docs) for the parts that change most often.
+>
+> Refer to [Tailscale release stages](https://tailscale.com/docs/reference/tailscale-release-stages) for more information about alpha, beta, and GA releases.
 
 ## Installing
 
@@ -46,3 +48,11 @@ Each reference file is self-contained. The LLM should only load the relevant ref
 Open an issue at https://github.com/tailscale/tailscale-skill/issues. This is the place for skill-specific problems (a reference is wrong, your agent gives bad advice for some feature, the install instructions don't work).
 
 For Tailscale product questions unrelated to the skill, use the regular Tailscale support channels.
+
+## Legal
+
+WireGuard is a registered trademark of Jason A. Donenfeld.
+
+## LICENSE
+
+BSD 3-Clause "New" or "Revised" License. Refer to `LICENSE` for details.
