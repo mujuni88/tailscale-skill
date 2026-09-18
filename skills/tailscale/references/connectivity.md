@@ -27,6 +27,17 @@ The rule: a connection is relayed if both sides are Hard NAT, or if one side is 
 
 DERP also serves a second role: **connection negotiation**. Even direct connections use DERP briefly to exchange discovery (DISCO) packets before switching to direct.
 
+## Other VPNs and overlapping CGNAT routes
+
+Treat failures with two active VPNs as routing problems until route inspection proves otherwise. Another VPN can use Tailscale's `100.64.0.0/10` CGNAT range for its own private services. Each VPN can then capture traffic intended for the other.
+
+1. Resolve the failing hostname and record every returned address.
+2. Inspect the selected route for each address. On macOS, use `route -n get <address>` and `netstat -rn -f inet` to identify the owning interface.
+3. Prefer the other VPN's supported split-tunnel or route-exclusion controls. If those controls are unavailable and policy permits it, prove a narrow `/32` host-route override before automating it.
+4. Reconcile host routes after VPN reconnects and DNS address changes. Never redirect the entire `100.64.0.0/10` range away from Tailscale.
+
+Disabling MagicDNS cannot repair a route that the wrong VPN owns. An exit node does not remove the overlap, and exit nodes support only one VPN at a time. Use userspace networking only when its SOCKS5 proxy model fits the application.
+
 ## Canonical shapes
 
 ### Configure a peer relay
@@ -177,6 +188,7 @@ The troubleshooting docs are organized as a hub with per-platform and per-topic 
 | A mobile (battery, app routing) problem | https://tailscale.com/docs/reference/troubleshooting/mobile |
 | A cloud environment problem (AWS/GCP routes, Oracle, subnets) | https://tailscale.com/docs/reference/troubleshooting/cloud |
 | A specific hard-NAT problem | https://tailscale.com/docs/reference/troubleshooting/network-configuration/hard-nat-issues |
+| Running Tailscale alongside another VPN | https://tailscale.com/docs/reference/faq/other-vpns |
 | CGNAT conflicts (with 100.64/10 ranges) | https://tailscale.com/docs/reference/troubleshooting/network-configuration/cgnat-conflicts |
 
 ### Remote desktop
